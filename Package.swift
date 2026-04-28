@@ -15,12 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../quality-gate-types"),
+        .package(url: "https://github.com/jpsim/Yams.git", from: "5.0.0"),
     ],
     targets: [
         .target(
             name: "IJSCore",
             dependencies: [
                 .product(name: "QualityGateTypes", package: "quality-gate-types"),
+                .product(name: "Yams", package: "Yams"),
             ],
             path: "Sources/IJSCore"
         ),
