@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 @testable import IJSCore
+import QualityGateTypes
 
 @Suite("EthicalFlag")
 struct EthicalFlagTests {
@@ -50,9 +51,15 @@ struct EnvironmentTests {
 @Suite("OverrideRecord")
 struct OverrideRecordTests {
 
+    static let sampleDiagnosticOverride = DiagnosticOverride(
+        ruleId: "force-unwrap",
+        justification: "SAFETY: Necessary for legacy C-API compatibility",
+        filePath: "Sources/Interop/Bridge.swift",
+        lineNumber: 42
+    )
+
     static let sample = OverrideRecord(
-        diagnosticID: "FORBIDDEN_FORCE_UNWRAP",
-        justification: "Necessary for legacy C-API compatibility",
+        diagnosticOverride: sampleDiagnosticOverride,
         author: "j_doe_senior_dev",
         riskTier: .safety,
         authorityLevel: .decisionOwner
@@ -61,8 +68,8 @@ struct OverrideRecordTests {
     @Test("Golden path: all fields populated")
     func goldenPath() {
         let record = Self.sample
-        #expect(record.diagnosticID == "FORBIDDEN_FORCE_UNWRAP")
-        #expect(record.justification == "Necessary for legacy C-API compatibility")
+        #expect(record.diagnosticOverride.ruleId == "force-unwrap")
+        #expect(record.diagnosticOverride.justification.contains("C-API"))
         #expect(record.author == "j_doe_senior_dev")
         #expect(record.riskTier == .safety)
         #expect(record.authorityLevel == .decisionOwner)
@@ -75,55 +82,39 @@ struct OverrideRecordTests {
         #expect(decoded == Self.sample)
 
         let json = String(data: data, encoding: .utf8) ?? ""
-        #expect(json.contains("\"diagnosticID\""))
+        #expect(json.contains("\"diagnosticOverride\""))
+        #expect(json.contains("\"ruleId\""))
         #expect(json.contains("\"riskTier\""))
         #expect(json.contains("\"authorityLevel\""))
     }
 }
 
-@Suite("Diagnostic")
-struct DiagnosticTests {
+@Suite("CheckResult (shared type integration)")
+struct CheckResultIntegrationTests {
 
-    static let sample = Diagnostic(
-        errorCode: "QualityGateError.safetyViolation",
+    static let sampleDiagnostic = Diagnostic(
+        severity: .error,
+        message: "Division by zero protection missing",
         filePath: "Sources/Math/Division.swift",
         lineNumber: 42,
-        message: "Division by zero protection missing",
-        isFixable: true
+        ruleId: "safety.division-by-zero",
+        suggestedFix: "Add zero check guard"
     )
 
-    @Test("All fields accessible")
-    func properties() {
-        let d = Self.sample
-        #expect(d.errorCode == "QualityGateError.safetyViolation")
-        #expect(d.filePath == "Sources/Math/Division.swift")
-        #expect(d.lineNumber == 42)
-        #expect(d.message == "Division by zero protection missing")
-        #expect(d.isFixable == true)
-    }
-
-    @Test("Codable round-trip")
-    func codableRoundTrip() throws {
-        let data = try JSONEncoder().encode(Self.sample)
-        let decoded = try JSONDecoder().decode(Diagnostic.self, from: data)
-        #expect(decoded == Self.sample)
-    }
-}
-
-@Suite("CheckerResult")
-struct CheckerResultTests {
-
-    static let sample = CheckerResult(
+    static let sample = CheckResult(
         checkerId: "SafetyAuditor",
-        status: "fail",
-        diagnostics: [DiagnosticTests.sample]
+        status: .failed,
+        diagnostics: [sampleDiagnostic],
+        duration: .seconds(2)
     )
 
-    @Test("All fields accessible")
+    @Test("Shared CheckResult type integrates with IJS")
     func properties() {
         #expect(Self.sample.checkerId == "SafetyAuditor")
-        #expect(Self.sample.status == "fail")
+        #expect(Self.sample.status == .failed)
         #expect(Self.sample.diagnostics.count == 1)
+        #expect(Self.sample.diagnostics[0].filePath == "Sources/Math/Division.swift")
+        #expect(Self.sample.diagnostics[0].isFixable == true)
     }
 
     @Test("Codable round-trip with camelCase checkerId")
@@ -131,8 +122,10 @@ struct CheckerResultTests {
         let data = try JSONEncoder().encode(Self.sample)
         let json = String(data: data, encoding: .utf8) ?? ""
         #expect(json.contains("\"checkerId\""))
+        #expect(json.contains("\"filePath\""))
+        #expect(json.contains("\"lineNumber\""))
 
-        let decoded = try JSONDecoder().decode(CheckerResult.self, from: data)
+        let decoded = try JSONDecoder().decode(CheckResult.self, from: data)
         #expect(decoded == Self.sample)
     }
 }
@@ -150,7 +143,7 @@ struct CheckResultMetadataTests {
             timestamp: Date(timeIntervalSince1970: 1_777_536_311),
             environment: .ci,
             decisionOwner: "j_doe_senior_dev",
-            results: [CheckerResultTests.sample],
+            results: [CheckResultIntegrationTests.sample],
             overrides: overrides,
             riskTier: .safety,
             ethicalFlags: ethicalFlags,
@@ -236,20 +229,21 @@ struct CheckResultMetadataTests {
 
     @Test("Multiple results with multiple diagnostics")
     func multipleResults() throws {
-        let result2 = CheckerResult(
+        let result2 = CheckResult(
             checkerId: "ConcurrencyAuditor",
-            status: "fail",
+            status: .failed,
             diagnostics: [
-                Diagnostic(errorCode: "concurrency.1", filePath: "A.swift", lineNumber: 1, message: "msg1", isFixable: false),
-                Diagnostic(errorCode: "concurrency.2", filePath: "B.swift", lineNumber: 2, message: "msg2", isFixable: true),
-            ]
+                Diagnostic(severity: .error, message: "msg1", filePath: "A.swift", lineNumber: 1, ruleId: "concurrency.1"),
+                Diagnostic(severity: .warning, message: "msg2", filePath: "B.swift", lineNumber: 2, ruleId: "concurrency.2", suggestedFix: "Fix"),
+            ],
+            duration: .seconds(1)
         )
         let meta = CheckResultMetadata(
             projectID: "Test",
             timestamp: Date(timeIntervalSince1970: 0),
             environment: .local,
             decisionOwner: "tester",
-            results: [CheckerResultTests.sample, result2],
+            results: [CheckResultIntegrationTests.sample, result2],
             overrides: [],
             riskTier: .operational,
             ethicalFlags: [],

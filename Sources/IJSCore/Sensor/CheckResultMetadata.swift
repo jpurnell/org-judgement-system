@@ -1,4 +1,5 @@
 import Foundation
+import QualityGateTypes
 
 /// Ethical risk signals detected by the quality gate's automated auditors.
 public enum EthicalFlag: String, Sendable, Codable {
@@ -22,57 +23,14 @@ public enum Environment: String, Sendable, Codable {
     case ci
 }
 
-/// A single issue found by a quality gate checker.
-public struct Diagnostic: Sendable, Codable, Equatable {
-    /// The error code from the quality gate error registry.
-    public let errorCode: String
-    /// Path to the file containing the issue.
-    public let filePath: String
-    /// Line number where the issue was detected.
-    public let lineNumber: Int
-    /// Human-readable description of the violation.
-    public let message: String
-    /// Whether the issue is eligible for the `--fix` flag.
-    public let isFixable: Bool
-
-    public init(
-        errorCode: String,
-        filePath: String,
-        lineNumber: Int,
-        message: String,
-        isFixable: Bool
-    ) {
-        self.errorCode = errorCode
-        self.filePath = filePath
-        self.lineNumber = lineNumber
-        self.message = message
-        self.isFixable = isFixable
-    }
-}
-
-/// The result of a single quality gate checker (e.g., SafetyAuditor, ConcurrencyAuditor).
-public struct CheckerResult: Sendable, Codable, Equatable {
-    /// Identifier matching the quality-gate-swift checker (e.g., "SafetyAuditor").
-    public let checkerId: String
-    /// Pass or fail status for this checker.
-    public let status: String
-    /// Individual issues found by this checker.
-    public let diagnostics: [Diagnostic]
-
-    public init(checkerId: String, status: String, diagnostics: [Diagnostic]) {
-        self.checkerId = checkerId
-        self.status = status
-        self.diagnostics = diagnostics
-    }
-}
-
-/// A documented override of a quality gate check, including the justification and authority.
+/// An override enriched with IJS judgment context.
+///
+/// Wraps a `DiagnosticOverride` from the quality gate with institutional
+/// metadata: who authorized it, at what risk tier, and with what authority.
 public struct OverrideRecord: Sendable, Codable, Equatable {
-    /// The diagnostic rule that was overridden.
-    public let diagnosticID: String
-    /// The practitioner's rationale for the override.
-    public let justification: String
-    /// Who performed the override.
+    /// The underlying diagnostic override from the quality gate.
+    public let diagnosticOverride: DiagnosticOverride
+    /// The practitioner or stakeholder who authorized the override.
     public let author: String
     /// The risk tier of the overridden rule.
     public let riskTier: RiskTier
@@ -80,14 +38,12 @@ public struct OverrideRecord: Sendable, Codable, Equatable {
     public let authorityLevel: AuthorityLevel
 
     public init(
-        diagnosticID: String,
-        justification: String,
+        diagnosticOverride: DiagnosticOverride,
         author: String,
         riskTier: RiskTier,
         authorityLevel: AuthorityLevel
     ) {
-        self.diagnosticID = diagnosticID
-        self.justification = justification
+        self.diagnosticOverride = diagnosticOverride
         self.author = author
         self.riskTier = riskTier
         self.authorityLevel = authorityLevel
@@ -109,8 +65,8 @@ public struct CheckResultMetadata: Sendable, Codable, Equatable {
     /// The stakeholder with authority to ship this artifact, per the DRM.
     public let decisionOwner: String
     /// Results from each quality gate checker.
-    public let results: [CheckerResult]
-    /// Documented overrides of quality gate checks.
+    public let results: [CheckResult]
+    /// Documented overrides of quality gate checks, enriched with judgment context.
     public let overrides: [OverrideRecord]
     /// The overall risk classification for this gate run.
     public let riskTier: RiskTier
@@ -126,7 +82,7 @@ public struct CheckResultMetadata: Sendable, Codable, Equatable {
     ///   - environment: Local or CI.
     ///   - decisionOwner: Stakeholder with shipping authority.
     ///   - results: Results from each checker.
-    ///   - overrides: Documented overrides.
+    ///   - overrides: Documented overrides with judgment context.
     ///   - riskTier: Overall risk classification.
     ///   - ethicalFlags: Ethical risk signals.
     ///   - consistencyScore: Institutional consistency score, if available.
@@ -135,7 +91,7 @@ public struct CheckResultMetadata: Sendable, Codable, Equatable {
         timestamp: Date,
         environment: Environment,
         decisionOwner: String,
-        results: [CheckerResult],
+        results: [CheckResult],
         overrides: [OverrideRecord],
         riskTier: RiskTier,
         ethicalFlags: [EthicalFlag],

@@ -13,9 +13,15 @@ let package = Package(
             targets: ["IJSCore"]
         ),
     ],
+    dependencies: [
+        .package(path: "../quality-gate-types"),
+    ],
     targets: [
         .target(
             name: "IJSCore",
+            dependencies: [
+                .product(name: "QualityGateTypes", package: "quality-gate-types"),
+            ],
             path: "Sources/IJSCore"
         ),
         .testTarget(
