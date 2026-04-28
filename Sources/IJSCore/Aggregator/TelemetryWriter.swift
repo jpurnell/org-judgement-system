@@ -10,6 +10,7 @@ public actor TelemetryWriter {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
+    /// Creates a new telemetry writer with ISO 8601 date encoding and sorted, pretty-printed JSON.
     public init() {
         let enc = JSONEncoder()
         enc.outputFormatting = [.prettyPrinted, .sortedKeys]

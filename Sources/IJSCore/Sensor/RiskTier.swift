@@ -41,6 +41,7 @@ public enum RiskTier: Int, Sendable, Codable, Comparable {
         }
     }
 
+    /// Compares risk tiers by severity (lower raw value = lower risk).
     public static func < (lhs: RiskTier, rhs: RiskTier) -> Bool {
         lhs.rawValue < rhs.rawValue
     }

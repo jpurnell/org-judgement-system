@@ -13,6 +13,7 @@ public enum IJSError: Error, Sendable, Equatable, LocalizedError {
     /// Configuration file could not be loaded or parsed.
     case configurationError(reason: String)
 
+    /// A human-readable description of the error.
     public var errorDescription: String? {
         switch self {
         case .unjustifiedOverride(let diagnostic):

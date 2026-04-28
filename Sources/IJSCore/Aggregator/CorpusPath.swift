@@ -10,6 +10,10 @@ public struct CorpusPath: Sendable, Equatable {
     /// Project identifier used in the directory hierarchy.
     public let projectID: String
 
+    /// Creates a new corpus path calculator.
+    /// - Parameters:
+    ///   - basePath: Root of the corpus directory.
+    ///   - projectID: Project identifier used in the directory hierarchy.
     public init(basePath: String, projectID: String) {
         self.basePath = basePath
         self.projectID = projectID

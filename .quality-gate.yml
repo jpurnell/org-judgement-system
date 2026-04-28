@@ -7,3 +7,5 @@ enabledCheckers:
   - build
   - test
   - safety
+  - doc-lint
+  - doc-coverage

@@ -9,6 +9,11 @@ public struct RoleAssignment: Sendable, Codable, Equatable {
     /// The specific action this role must perform (e.g., "Approve Step 0 Proposal").
     public let requiredAction: String
 
+    /// Creates a new role assignment.
+    /// - Parameters:
+    ///   - name: The individual's name.
+    ///   - role: The individual's organizational role.
+    ///   - requiredAction: The specific action this role must perform.
     public init(name: String, role: String, requiredAction: String) {
         self.name = name
         self.role = role

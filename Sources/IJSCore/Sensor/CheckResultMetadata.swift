@@ -37,6 +37,12 @@ public struct OverrideRecord: Sendable, Codable, Equatable {
     /// The authority level of the person approving the override.
     public let authorityLevel: AuthorityLevel
 
+    /// Creates a new override record.
+    /// - Parameters:
+    ///   - diagnosticOverride: The underlying diagnostic override from the quality gate.
+    ///   - author: The practitioner who authorized the override.
+    ///   - riskTier: The risk tier of the overridden rule.
+    ///   - authorityLevel: The authority level of the approver.
     public init(
         diagnosticOverride: DiagnosticOverride,
         author: String,

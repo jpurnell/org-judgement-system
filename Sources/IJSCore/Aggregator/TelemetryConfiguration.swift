@@ -16,6 +16,13 @@ public struct TelemetryConfiguration: Sendable, Codable, Equatable {
     /// Whether this is a local or CI environment. Auto-detected if nil.
     public let environment: Environment?
 
+    /// Creates a new telemetry configuration.
+    /// - Parameters:
+    ///   - projectID: Repository or project identifier.
+    ///   - corpusPath: Absolute path to the telemetry corpus root directory.
+    ///   - decisionOwner: Stakeholder who owns shipping decisions.
+    ///   - defaultRiskTier: Default risk tier when not specified per-override.
+    ///   - environment: Local or CI; nil for auto-detection.
     public init(
         projectID: String,
         corpusPath: String,
