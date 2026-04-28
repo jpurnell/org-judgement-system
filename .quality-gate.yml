@@ -1,0 +1,9 @@
+parallelWorkers: 8
+
+safetyExemptions:
+  - "// SAFETY:"
+
+enabledCheckers:
+  - build
+  - test
+  - safety
