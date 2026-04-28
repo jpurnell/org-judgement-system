@@ -1,0 +1,10 @@
+.build/
+.DS_Store
+default.profraw
+
+# Development guidelines tracked on project-state/org-judgement-system branch
+development-guidelines/
+
+# Claude Code local settings (personal preferences, not shared)
+.claude/settings.local.json
+CLAUDE.local.md
